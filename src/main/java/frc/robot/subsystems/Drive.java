@@ -27,12 +27,13 @@ import frc.lib.swerve.SwerveSetpointGenerator;
 import frc.lib.swerve.SwerveSetpointGenerator.KinematicLimits;
 import frc.robot.Constants;
 import frc.robot.Robot;
+import com.kauailabs.navx.frc.*;
+import edu.wpi.first.wpilibj.SPI;
 
 public class Drive extends Subsystem {
     // private final Vision mVision;
     private final RobotState mRobotState;
-
-    private final Navx mPigeon = new Navx(Constants.Drive.kPigeonIMUId, Constants.Can.kCANivoreBusName);
+    private final AHRS mNavx = new AHRS(SPI.Port.kMXP); /* Alternatives:  SPI.Port.kMXP, I2C.Port.kMXP or SerialPort.Port.kUSB */
     // private final Pigeon2 mPigeon = new Pigeon2(Constants.Drive.kPigeonIMUId, Constants.Can.kCANivoreBusName);
 
 
@@ -107,8 +108,10 @@ public class Drive extends Subsystem {
                 Cancoders.getInstance().getBackRight(),
                 Constants.Drive.kBackRightSteerOffset);
 
-        mYawOffset = mPigeon.getYaw().getValue();
-        mRollOffset = mPigeon.getRoll().getValue();
+        mYawOffset = mNavx.getYaw();
+        mRollOffset = mNavx.getRoll();
+        // mYawOffset = mPigeon.getYaw().getValue();
+        // mRollOffset = mPigeon.getRoll().getValue();
         readGyro();
         readModules();
         setSetpointFromMeasured();
@@ -167,8 +170,10 @@ public class Drive extends Subsystem {
      * 'forwards' direction.
      */
     public synchronized void zeroGyroscope() {
-        mYawOffset = mPigeon.getYaw().getValue();
-        mRollOffset = mPigeon.getRoll().getValue();
+        // mYawOffset = mPigeon.getYaw().getValue();
+        // mRollOffset = mPigeon.getRoll().getValue();
+        mYawOffset = mNavx.getYaw();
+        mRollOffset = mNavx.getRoll();
         readGyro();
     }
 
@@ -181,10 +186,14 @@ public class Drive extends Subsystem {
     }
 
     protected synchronized void readGyro() {
-        mPeriodicIO.heading = Rotation2d.fromDegrees(mPigeon.getYaw().getValue() - mYawOffset);
-        mPeriodicIO.roll = Rotation2d.fromDegrees(mPigeon.getRoll().getValue() - mRollOffset);
-        mPeriodicIO.pitch = Rotation2d.fromDegrees(mPigeon.getPitch().getValue());
-        mPeriodicIO.pitchVel = mPigeon.getAccelerationX().getValue();
+        // mPeriodicIO.heading = Rotation2d.fromDegrees(mPigeon.getYaw().getValue() - mYawOffset);
+        // mPeriodicIO.roll = Rotation2d.fromDegrees(mPigeon.getRoll().getValue() - mRollOffset);
+        // mPeriodicIO.pitch = Rotation2d.fromDegrees(mPigeon.getPitch().getValue());
+        // mPeriodicIO.pitchVel = mPigeon.getAccelerationX().getValue();
+        mPeriodicIO.heading = Rotation2d.fromDegrees(mNavx.getYaw() - mYawOffset);
+        mPeriodicIO.roll = Rotation2d.fromDegrees(mNavx.getRoll() - mRollOffset);
+        mPeriodicIO.pitch = Rotation2d.fromDegrees(mNavx.getPitch());
+        mPeriodicIO.pitchVel = mNavx.getVelocityX();
     }
 
     public double getPitchVel() {
@@ -200,7 +209,8 @@ public class Drive extends Subsystem {
     }
 
     public synchronized void resetRoll() {
-        mRollOffset = mPigeon.getRoll().getValue();
+        // mRollOffset = mPigeon.getRoll().getValue();
+        mRollOffset = mNavx.getRoll();
     }
 
     public synchronized SwerveModuleState[] getModuleStates() {
